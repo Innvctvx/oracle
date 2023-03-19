@@ -124,11 +124,9 @@ while to_try:
             message = f"{e} Retry in {wait_s_for_retry}s"
         logging.info(message)
         time.sleep(wait_s_for_retry)
-        to_try=to_try+1
     except Exception as e:
         message = f"{e} Retry in {wait_s_for_retry}s"
         logging.info(message)
         time.sleep(wait_s_for_retry)
-        to_try=to_try+1
     except KeyboardInterrupt:
         sys.exit()
