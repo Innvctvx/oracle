@@ -1,0 +1,134 @@
+displayName = 'Server 1'
+compartmentId = 'ocid1.tenancy.oc1..aaaaaaaaysjhtrrpu2x5vdq6gcaulv4n2wbzfzuwuffmxuo3lkcyugi2a3qq'
+availabilityDomain = "ipak:US-ASHBURN-AD-2"
+imageId = "ocid1.image.oc1.iad.aaaaaaaaefewu34uagapmhrjy22ztl3kw4epdbuvtvch2oc6tskjqa6ray2a"
+subnetId = 'ocid1.subnet.oc1.iad.aaaaaaaaz56hkurd5af32ibc5u2rfgpwtxftwk2b6xmeqq5uzr7fynbsijrq'
+ssh_authorized_keys = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCHQ7bqV0rOD2X1B3Lwc3JZfktKW755JRmUrqAs9xLJjalvsBx9/oXmb2hyozOcE3jFRe6eD27qA/oGqAcTUOtx6i3hU3TNi/I3xCuOsV2AlbUF6p5U9M4LcicfnqryiNAcuqoYUCqxOAdlCQRqHuWc7Yv+RZeRoqyyBqH6JhpEvSkIEQ92kA4Hi0fvKgYnIO7Yrc6SwRyh8e8kz/lf3pRyaZkBidBSsAxwxcxFas8s4UU6dMr8jWze20v7wJ9S0E19NONA97Fey576P5gSSOaC2h/CZm9bqlcOTpvySxPzDs9V7mI/DBfdu39Ci74eg5Qxw9ekobi8w8y+eVfWFrRp ssh-key-2023-03-19"
+
+
+import oci
+import logging
+import time
+import sys
+import requests
+
+LOG_FORMAT = '[%(levelname)s] %(asctime)s - %(message)s'
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    handlers=[
+        logging.FileHandler("oci.log"),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+ocpus = 1
+memory_in_gbs = 1
+wait_s_for_retry = 10
+
+logging.info("#####################################################")
+logging.info("Script to spawn VM.Standard.E2.1.Micro instance")
+
+
+message = f'Start spawning instance VM.Standard.E2.1.Micro - {ocpus} ocpus - {memory_in_gbs} GB'
+logging.info(message)
+
+logging.info("Loading OCI config")
+config = oci.config.from_file(file_location="./config")
+
+logging.info("Initialize service client with default config file")
+to_launch_instance = oci.core.ComputeClient(config)
+
+message = f"Instance to create: VM.Standard.E2.1.Micro - {ocpus} ocpus - {memory_in_gbs} GB"
+logging.info(message)
+
+logging.info("Check current instances in account")
+current_instance = to_launch_instance.list_instances(compartment_id=compartmentId)
+response = current_instance.data
+
+total_ocpus = total_memory = _A1_Flex = 0
+instance_names = []
+if response:
+    logging.info(f"{len(response)} instance(s) found!")
+    for instance in response:
+        logging.info(f"{instance.display_name} - {instance.shape} - {int(instance.shape_config.ocpus)} ocpu(s) - {instance.shape_config.memory_in_gbs} GB(s) | State: {instance.lifecycle_state}")
+        instance_names.append(instance.display_name)
+        if instance.shape == "VM.Standard.E2.1.Micro" and instance.lifecycle_state not in ("TERMINATING", "TERMINATED"):
+            _A1_Flex += 1
+            total_ocpus += int(instance.shape_config.ocpus)
+            total_memory += int(instance.shape_config.memory_in_gbs)
+
+    message = f"Current: {_A1_Flex} active VM.Standard.E2.1.Micro instance(s) (including RUNNING OR STOPPED)"
+    logging.info(message)
+else:
+    logging.info(f"No instance(s) found!")
+
+
+message = f"Total ocpus: {total_ocpus} - Total memory: {total_memory} (GB) || Free {2-total_ocpus} ocpus - Free memory: {2-total_memory} (GB)"
+logging.info(message)
+
+
+if total_ocpus + ocpus > 2 or total_memory + memory_in_gbs > 2:
+    message = "Total maximum resource exceed free tier limit (Over 2 AMD micro instances total). **SCRIPT STOPPED**"
+    logging.critical(message)
+    sys.exit()
+
+if displayName in instance_names:
+    message = f"Duplicate display name: >>>{displayName}<<< Change this! **SCRIPT STOPPED**"
+    logging.critical(message)
+    sys.exit()
+
+message = f"Precheck pass! Create new instance VM.Standard.E2.1.Micro: {ocpus} opus - {memory_in_gbs} GB"
+logging.info(message)
+
+instance_detail = oci.core.models.LaunchInstanceDetails(
+    metadata={
+        "ssh_authorized_keys": ssh_authorized_keys
+    },
+    availability_domain=availabilityDomain,
+    shape='VM.Standard.E2.1.Micro',
+    compartment_id=compartmentId,
+    display_name=displayName,
+    source_details=oci.core.models.InstanceSourceViaImageDetails(
+        source_type="image", image_id=imageId),
+    create_vnic_details=oci.core.models.CreateVnicDetails(
+        assign_public_ip=False, subnet_id=subnetId, assign_private_dns_record=True),
+    agent_config=oci.core.models.LaunchInstanceAgentConfigDetails(
+        is_monitoring_disabled=False,
+        is_management_disabled=False,
+        plugins_config=[oci.core.models.InstanceAgentPluginConfigDetails(
+            name='Vulnerability Scanning', desired_state='DISABLED'), oci.core.models.InstanceAgentPluginConfigDetails(name='Compute Instance Monitoring', desired_state='ENABLED'), oci.core.models.InstanceAgentPluginConfigDetails(name='Bastion', desired_state='DISABLED')]
+    ),
+    defined_tags={},
+    freeform_tags={},
+    instance_options=oci.core.models.InstanceOptions(
+        are_legacy_imds_endpoints_disabled=False),
+    availability_config=oci.core.models.LaunchInstanceAvailabilityConfigDetails(
+        recovery_action="RESTORE_INSTANCE"),
+    shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
+        ocpus=ocpus, memory_in_gbs=memory_in_gbs)
+)
+
+to_try = True
+while to_try:
+    try:
+        to_launch_instance.launch_instance(instance_detail)
+        to_try = False
+        message = 'Success! Edit vnic to get public ip address'
+        logging.info(message)
+        sys.exit()
+    except oci.exceptions.ServiceError as e:
+        if e.status == 500:
+            message = f"{e.message} Retry in {wait_s_for_retry}s"
+        else:
+            message = f"{e} Retry in {wait_s_for_retry}s"
+        logging.info(message)
+        time.sleep(wait_s_for_retry)
+        to_try=to_try+1
+    except Exception as e:
+        message = f"{e} Retry in {wait_s_for_retry}s"
+        logging.info(message)
+        time.sleep(wait_s_for_retry)
+        to_try=to_try+1
+    except KeyboardInterrupt:
+        sys.exit()
