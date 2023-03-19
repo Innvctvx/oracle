@@ -126,7 +126,7 @@ while to_try:
         time.sleep(wait_s_for_retry)
     except Exception as e:
         message = f"{e} Retry in {wait_s_for_retry}
-        to_try=to_try+1
+        to_try=to_try+1s"
         logging.info(message)
         time.sleep(wait_s_for_retry)
     except KeyboardInterrupt:
