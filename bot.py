@@ -109,7 +109,7 @@ instance_detail = oci.core.models.LaunchInstanceDetails(
         ocpus=ocpus, memory_in_gbs=memory_in_gbs)
 )
 
-to_try = True
+to_try =True
 while to_try:
     try:
         to_launch_instance.launch_instance(instance_detail)
@@ -124,12 +124,11 @@ while to_try:
             message = f"{e} Retry in {wait_s_for_retry}s"
         logging.info(message)
         time.sleep(wait_s_for_retry)
+        to_try=to_try+1
     except Exception as e:
-        message = f"{e} Retry in {wait_s_for_retry}
-        to_try=to_try+1s"
+        message = f"{e} Retry in {wait_s_for_retry}s"
         logging.info(message)
         time.sleep(wait_s_for_retry)
+        to_try=to_try+1
     except KeyboardInterrupt:
         sys.exit()
-
-        to_try=to_try+1
