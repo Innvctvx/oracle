@@ -1,9 +1,7 @@
-displayName = 'Server 1'
-compartmentId = 'ocid1.tenancy.oc1..aaaaaaaaysjhtrrpu2x5vdq6gcaulv4n2wbzfzuwuffmxuo3lkcyugi2a3qq'
-availabilityDomain = "ipak:US-ASHBURN-AD-2"
-imageId = "ocid1.image.oc1.iad.aaaaaaaaefewu34uagapmhrjy22ztl3kw4epdbuvtvch2oc6tskjqa6ray2a"
+displayName = 'instance-20230319-0042'
+compartmentId = 'aaaaaaefewu34uagapmhrjy22ztl3kw4epdbuvtvch2oc6tskjqa6ray2a"
 subnetId = 'ocid1.subnet.oc1.iad.aaaaaaaaz56hkurd5af32ibc5u2rfgpwtxftwk2b6xmeqq5uzr7fynbsijrq'
-ssh_authorized_keys = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCHQ7bqV0rOD2X1B3Lwc3JZfktKW755JRmUrqAs9xLJjalvsBx9/oXmb2hyozOcE3jFRe6eD27qA/oGqAcTUOtx6i3hU3TNi/I3xCuOsV2AlbUF6p5U9M4LcicfnqryiNAcuqoYUCqxOAdlCQRqHuWc7Yv+RZeRoqyyBqH6JhpEvSkIEQ92kA4Hi0fvKgYnIO7Yrc6SwRyh8e8kz/lf3pRyaZkBidBSsAxwxcxFas8s4UU6dMr8jWze20v7wJ9S0E19NONA97Fey576P5gSSOaC2h/CZm9bqlcOTpvySxPzDs9V7mI/DBfdu39Ci74eg5Qxw9ekobi8w8y+eVfWFrRp ssh-key-2023-03-19"
+ssh_authorized_keys = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYIwRMinLk8iwnouTofUrQu3VfIG9vAhCf1a07cULVz8BizK+g3VnR9IbnagM9bLyuZM27YiQKYzJjMKtbSHwijFKtr69y4pzYil0YXQTjwWCbqsRnloxLwryarPeNGxbICXuw3teYwSjd2FaQ4BTHAAmfjFtnmSbgaQpZW5ILsXPygRzlzVERdSyOexSJdXA3rjfI5Xo5OuNifJ3FeITTW9f+ztZPN4V+h/ES2CbWRXHEiU4DZ6fqdddiogT4UTnwjwstqx4DRXBAVJnKsJjS6wFM3t1TJrAF/lN6aT9Y77OEria9+RzubeVFqLjPHjB2dAKWX8VRzr6dY8xS+M5x ssh-key-2023-03-19"
 
 
 import oci
@@ -125,8 +123,11 @@ while to_try:
         logging.info(message)
         time.sleep(wait_s_for_retry)
     except Exception as e:
-        message = f"{e} Retry in {wait_s_for_retry}s"
+        message = f"{e} Retry in {wait_s_for_retry}
+        to_try=to_try+1"
         logging.info(message)
         time.sleep(wait_s_for_retry)
     except KeyboardInterrupt:
         sys.exit()
+
+        to_try=to_try+1
